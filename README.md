@@ -1,6 +1,6 @@
 # Cheema Text-to-Voice MCP Server
 
-> An MCP (Model Context Protocol) server that brings **AI-powered text-to-speech** into **Claude Desktop**, **Claude Code**, **n8n**, and any MCP-compatible platform. Powered by [NeuTTS](https://github.com/neuphonic/neutts) — state-of-the-art, open-source, on-device TTS with instant voice cloning. Supports **stdio**, **SSE**, and **HTTP** transports.
+> **Free, open-source text-to-speech for AI assistants.** Generate natural speech directly from Claude Desktop, Claude Code, n8n, or any MCP-compatible platform. No API keys. No cloud. Runs entirely on your machine.
 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge&logo=anthropic)](https://modelcontextprotocol.io)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
@@ -9,54 +9,28 @@
 
 ---
 
-## What Is This?
+## What Can It Do?
 
-This project lets you generate speech directly from your AI assistant. Just ask Claude to "say something" and it will synthesize a WAV file using any of the built-in voices — or your own cloned voice.
+Just ask your AI assistant to speak — it handles the rest:
 
-### Key Features
+> *"Say hello in French using the juliette voice"*
 
-- **5 MCP tools** — synthesize speech, list speakers, list models, add custom voices, help guide
-- **2 MCP prompts** — pre-built templates for quick speech and voice cloning
-- **Multi-transport** — stdio (CLI), SSE (n8n/web), and streamable-http
-- **5 built-in voices** — English (dave, jo), German (greta), French (juliette), Spanish (mateo)
-- **Instant voice cloning** — register any voice from a 3-15 second WAV sample
-- **Multilingual** — English, German, French, Spanish (model-dependent)
-- **Runs locally** — no API keys, no cloud, full privacy
-- **AI-friendly onboarding** — rich instructions and a `tts_help` tool guide any AI agent
-- **Thread-safe** — concurrent requests handled safely
+> *"Convert this paragraph to speech and save it as intro.wav"*
 
----
+> *"Clone my voice from this recording and use it to read my essay"*
 
-## MCP Tools
-
-| Tool | Parameters | Description |
-|------|-----------|-------------|
-| `tts_help` | *none* | Get a complete usage guide with examples — call this first! |
-| `tts_synthesize` | `text` (required), `speaker` (default: `"jo"`), `output_filename` (optional) | Convert text to speech, saves WAV to output directory |
-| `tts_list_speakers` | *none* | List all available speaker voices with language and source |
-| `tts_list_models` | *none* | List available NeuTTS backbone models, show currently loaded model |
-| `tts_add_speaker` | `name`, `wav_path`, `ref_text`, `language` (default: `"en-us"`) | Register a new voice from a WAV audio file |
-
-## MCP Prompts (Pre-built Templates)
-
-| Prompt | Parameters | Description |
-|--------|-----------|-------------|
-| `quick_speech` | `text` (required), `speaker` (optional, default: `"jo"`) | Generate speech quickly with a single prompt |
-| `voice_clone_guide` | *none* | Step-by-step walkthrough for cloning a new voice |
-
-These show up automatically in Claude Desktop's prompt picker and in n8n's MCP prompt list.
+**5 built-in voices** across 4 languages, plus **instant voice cloning** from a short audio sample.
 
 ---
 
 ## Quick Start
 
-### Prerequisites
+### 1. Install Prerequisites
 
-- **Python 3.10+**
-- **espeak-ng** (system dependency for phonemization)
+You need **Python 3.10+** and **espeak-ng**:
 
 ```bash
-# Ubuntu/Debian
+# Ubuntu / Debian
 sudo apt install espeak-ng
 
 # macOS
@@ -66,13 +40,12 @@ brew install espeak-ng
 choco install espeak-ng
 ```
 
-### 1. Clone & Install
+### 2. Clone & Install
 
 ```bash
 git clone https://github.com/MuhammadTayyabIlyas/CHeema-Text-to-Voice-MCP-Server.git
 cd CHeema-Text-to-Voice-MCP-Server
 
-# Create virtual environment and install dependencies
 python -m venv venv
 source venv/bin/activate        # Linux/macOS
 # venv\Scripts\activate          # Windows
@@ -81,21 +54,17 @@ pip install -e .
 pip install "mcp[cli]"
 ```
 
-### 2. Register with Claude Code
+### 3. Connect to Your AI Assistant
 
-```bash
-claude mcp add cheema-tts -- /path/to/CHeema-Text-to-Voice-MCP-Server/venv/bin/python /path/to/CHeema-Text-to-Voice-MCP-Server/mcp_server.py
-```
+Pick your platform and follow the steps below.
 
-For example, if you cloned into your home directory:
+---
 
-```bash
-claude mcp add cheema-tts -- ~/CHeema-Text-to-Voice-MCP-Server/venv/bin/python ~/CHeema-Text-to-Voice-MCP-Server/mcp_server.py
-```
+## Setup by Platform
 
-### 3. Register with Claude Desktop
+### Claude Desktop
 
-Add this to your Claude Desktop config file:
+Add this to your config file:
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -104,259 +73,235 @@ Add this to your Claude Desktop config file:
 {
   "mcpServers": {
     "cheema-tts": {
-      "command": "/path/to/CHeema-Text-to-Voice-MCP-Server/venv/bin/python",
-      "args": ["/path/to/CHeema-Text-to-Voice-MCP-Server/mcp_server.py"],
+      "command": "/full/path/to/CHeema-Text-to-Voice-MCP-Server/venv/bin/python",
+      "args": ["/full/path/to/CHeema-Text-to-Voice-MCP-Server/mcp_server.py"],
       "env": {}
     }
   }
 }
 ```
 
-### 4. Use It
+Restart Claude Desktop. You'll see the TTS tools appear in the tools menu.
 
-Once registered, just ask Claude naturally:
-
-> "Convert this text to speech: Hello, welcome to the Cheema Text-to-Voice server!"
-
-> "List available speakers"
-
-> "Say 'Good morning everyone' using the dave voice"
-
-> "Add my voice as a new speaker from /path/to/my_voice.wav"
-
----
-
-## Configuration
-
-The server is configured via environment variables. All are optional with sensible defaults:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NEUTTS_BACKBONE` | `neuphonic/neutts-nano` | HuggingFace backbone model repo |
-| `NEUTTS_BACKBONE_DEVICE` | `cpu` | Device for backbone (`cpu` or `cuda`) |
-| `NEUTTS_CODEC` | `neuphonic/neucodec` | HuggingFace codec model repo |
-| `NEUTTS_CODEC_DEVICE` | `cpu` | Device for codec (`cpu` or `cuda`) |
-| `NEUTTS_OUTPUT_DIR` | `./output` | Directory for generated WAV files |
-| `NEUTTS_SAMPLES_DIR` | `./samples` | Directory for built-in speaker samples |
-| `NEUTTS_SPEAKERS_DIR` | `./speakers` | Directory for custom speaker data |
-| `NEUTTS_TRANSPORT` | `stdio` | MCP transport: `stdio`, `sse`, or `streamable-http` |
-| `NEUTTS_HOST` | `127.0.0.1` | Host to bind for SSE/HTTP transports |
-| `NEUTTS_PORT` | `8000` | Port to bind for SSE/HTTP transports |
-
-### Example with Environment Variables
+### Claude Code
 
 ```bash
-NEUTTS_BACKBONE="neuphonic/neutts-air" NEUTTS_BACKBONE_DEVICE="cuda" \
-  claude mcp add cheema-tts -- /path/to/venv/bin/python /path/to/mcp_server.py
+claude mcp add cheema-tts -- /full/path/to/venv/bin/python /full/path/to/mcp_server.py
 ```
 
-Or in Claude Desktop config:
+Then just ask Claude to generate speech in any conversation.
 
-```json
-{
-  "mcpServers": {
-    "cheema-tts": {
-      "command": "/path/to/venv/bin/python",
-      "args": ["/path/to/mcp_server.py"],
-      "env": {
-        "NEUTTS_BACKBONE": "neuphonic/neutts-air",
-        "NEUTTS_BACKBONE_DEVICE": "cuda"
-      }
-    }
-  }
-}
-```
+### n8n
 
----
-
-## Transport Options
-
-The server supports three transports. Choose based on your platform:
-
-| Transport | Flag | Use Case | Default |
-|-----------|------|----------|---------|
-| `stdio` | `--transport stdio` | Claude Code, Claude Desktop (local pipe) | Yes |
-| `sse` | `--transport sse` | n8n, web dashboards, remote clients | No |
-| `streamable-http` | `--transport streamable-http` | HTTP-based MCP clients | No |
-
-Environment variables: `NEUTTS_TRANSPORT`, `NEUTTS_HOST`, `NEUTTS_PORT`
+Start the server in SSE mode:
 
 ```bash
-# stdio (default) — used by Claude Code / Claude Desktop
-python mcp_server.py
+cd CHeema-Text-to-Voice-MCP-Server
+source venv/bin/activate
+python mcp_server.py --transport sse --host 127.0.0.1 --port 8000
+```
 
-# SSE — used by n8n and web platforms
+In your n8n workflow:
+
+1. Add an **AI Agent** node with an **MCP Client Tool**
+2. Set connection type to **SSE**
+3. Enter the URL: `http://127.0.0.1:8000/sse`
+4. The agent can now call any TTS tool
+
+### Any Other MCP Client
+
+Start the server with your preferred transport:
+
+```bash
+# SSE (for web platforms and remote clients)
 python mcp_server.py --transport sse --host 0.0.0.0 --port 8000
 
 # Streamable HTTP
 python mcp_server.py --transport streamable-http --host 0.0.0.0 --port 8000
 ```
 
+Connect your MCP client to:
+- **SSE**: `http://<your-host>:8000/sse`
+- **HTTP**: `http://<your-host>:8000/mcp`
+
 ---
 
-## Production Deployment (audio.pakedx.com)
+## Available Voices
 
-The server runs in production on **server2** (`82.223.44.124`) behind Nginx with HTTPS.
+| Voice | Language | Description |
+|-------|----------|-------------|
+| **jo** | English | Default — clear, natural female voice |
+| **dave** | English | Male voice |
+| **greta** | German | German female voice |
+| **juliette** | French | French female voice |
+| **mateo** | Spanish | Spanish male voice |
 
-### Architecture
+Use `tts_list_speakers` to see all voices including any custom ones you've added.
+
+---
+
+## Voice Cloning
+
+Clone any voice from a short audio sample:
+
+1. **Record or find a WAV file** — 3 to 15 seconds of clean speech
+2. **Know the transcript** — the exact words spoken in the recording
+3. **Ask your AI assistant**:
+
+> *"Add a new speaker called 'alex' from /path/to/recording.wav — the transcript is 'This is what I said in the recording'"*
+
+Or call the tool directly:
 
 ```
-MCP Client ──HTTPS──▶ Nginx (audio.pakedx.com:443) ──HTTP──▶ MCP Server (127.0.0.1:8765)
+tts_add_speaker(name="alex", wav_path="/path/to/recording.wav", ref_text="This is what I said in the recording")
 ```
 
-### Endpoints
+Custom voices are saved permanently and available across restarts.
 
-| Client | URL |
-|--------|-----|
-| n8n (local on server2) | `http://127.0.0.1:8765/sse` |
-| n8n (external) | `https://audio.pakedx.com/sse` |
-| Claude Desktop | `https://audio.pakedx.com/sse` |
-| Any MCP client | `https://audio.pakedx.com/sse` |
+**Tips for best results:**
+- Mono audio, 16-44 kHz sample rate
+- 3-15 seconds of continuous, natural speech
+- Minimal background noise
 
-### Systemd Service
+---
 
-The server runs as `cheema-tts.service` — auto-starts on boot, auto-restarts on crash.
+## Available Tools
+
+| Tool | What It Does |
+|------|-------------|
+| `tts_help` | Shows a complete usage guide with examples — **start here** |
+| `tts_synthesize` | Converts text to speech, saves a WAV file |
+| `tts_list_speakers` | Lists all available voices |
+| `tts_list_models` | Shows the active model and alternatives |
+| `tts_add_speaker` | Clones a new voice from an audio sample |
+
+### tts_synthesize Parameters
+
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `text` | Yes | — | The text to convert to speech |
+| `speaker` | No | `"jo"` | Which voice to use |
+| `output_filename` | No | auto-generated | Custom filename for the WAV output |
+
+### MCP Prompts (Templates)
+
+| Prompt | Description |
+|--------|-------------|
+| `quick_speech` | Fast speech generation — just provide text and optional speaker |
+| `voice_clone_guide` | Step-by-step walkthrough for adding a new voice |
+
+These appear automatically in Claude Desktop's prompt picker.
+
+---
+
+## Models
+
+The default model (`neutts-nano`) works great on CPU. Larger models produce higher quality but need more resources.
+
+| Model | Language | Size | Notes |
+|-------|----------|------|-------|
+| `neuphonic/neutts-nano` | English | ~229M | **Default** — fast, good quality |
+| `neuphonic/neutts-air` | English | ~552M | Higher quality, slower |
+| `neuphonic/neutts-nano-german` | German | ~229M | German language |
+| `neuphonic/neutts-nano-french` | French | ~229M | French language |
+| `neuphonic/neutts-nano-spanish` | Spanish | ~229M | Spanish language |
+| `neuphonic/neutts-*-q4-gguf` | varies | smaller | Quantized — faster, less memory |
+| `neuphonic/neutts-*-q8-gguf` | varies | medium | Quantized — balanced |
+
+Switch models using environment variables:
 
 ```bash
-# Status / logs
-systemctl status cheema-tts
-journalctl -u cheema-tts -f
-
-# Restart
-systemctl restart cheema-tts
+NEUTTS_BACKBONE="neuphonic/neutts-air" python mcp_server.py
 ```
 
-Service file: `/etc/systemd/system/cheema-tts.service`
-
-### Nginx Config
-
-Config: `/etc/nginx/sites-available/audio.pakedx.com`
-
-Key settings for SSE:
-- `proxy_buffering off` — required for SSE streaming
-- `proxy_cache off` / `X-Accel-Buffering: no` — prevent response caching
-- `proxy_read_timeout 86400` — SSE connections are long-lived (24h)
-- `proxy_set_header Host $proxy_host` — backend rejects non-localhost Host headers
-
-SSL managed by Let's Encrypt (certbot auto-renewal).
-
-### Server Paths
-
-| Path | Description |
-|------|-------------|
-| `/var/www/voice/neutts/` | Project root |
-| `/var/www/voice/venv/` | Python 3.12.3 virtual environment |
-| `/var/www/voice/neutts/output/` | Generated WAV files |
-| `/var/www/voice/neutts/samples/` | Built-in speaker samples |
-| `/var/www/voice/neutts/speakers/` | Custom speaker data |
-
 ---
 
-## n8n Setup
+## Configuration
 
-### On the Same Server (server2)
+All settings are optional — defaults work out of the box.
 
-n8n on server2 connects directly — no Nginx/SSL overhead:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEUTTS_BACKBONE` | `neuphonic/neutts-nano` | HuggingFace model repo |
+| `NEUTTS_BACKBONE_DEVICE` | `cpu` | `cpu` or `cuda` for GPU |
+| `NEUTTS_CODEC` | `neuphonic/neucodec` | Audio codec model |
+| `NEUTTS_CODEC_DEVICE` | `cpu` | `cpu` or `cuda` for GPU |
+| `NEUTTS_OUTPUT_DIR` | `./output` | Where WAV files are saved |
+| `NEUTTS_SAMPLES_DIR` | `./samples` | Built-in speaker samples |
+| `NEUTTS_SPEAKERS_DIR` | `./speakers` | Custom voice data |
+| `NEUTTS_TRANSPORT` | `stdio` | `stdio`, `sse`, or `streamable-http` |
+| `NEUTTS_HOST` | `127.0.0.1` | Bind address (SSE/HTTP only) |
+| `NEUTTS_PORT` | `8000` | Bind port (SSE/HTTP only) |
 
-1. Add an **MCP Client Tool** node (or AI Agent with MCP tool)
-2. Set connection type: **SSE**
-3. URL: `http://127.0.0.1:8765/sse`
+### GPU Acceleration
 
-### From an External n8n Instance
+For faster synthesis on NVIDIA GPUs:
 
-1. Add an **MCP Client Tool** node
-2. Set connection type: **SSE**
-3. URL: `https://audio.pakedx.com/sse`
-
-### Available Tools via n8n
-
-- **tts_list_speakers** — discover available voices
-- **tts_synthesize** — generate speech (returns JSON with WAV file path and duration)
-- **tts_add_speaker** — clone a new voice
-- **tts_help** — get the full usage guide
-
----
-
-## Other MCP Platforms
-
-Any MCP-compatible platform can connect:
-
-| Transport | Endpoint |
-|-----------|----------|
-| SSE (production) | `https://audio.pakedx.com/sse` |
-| SSE (local) | `http://127.0.0.1:8765/sse` |
-| stdio (CLI) | `python mcp_server.py` |
-| streamable-http | `python mcp_server.py --transport streamable-http` |
-
-### Claude Desktop Config
-
-```json
-{
-  "mcpServers": {
-    "cheema-tts": {
-      "url": "https://audio.pakedx.com/sse"
-    }
-  }
-}
+```bash
+NEUTTS_BACKBONE_DEVICE=cuda NEUTTS_CODEC_DEVICE=cuda python mcp_server.py
 ```
 
+Requires PyTorch with CUDA support.
 
 ---
 
-## Available Models
+## Running as a Service
 
-| Model | Language | Size | Cloning |
-|-------|----------|------|---------|
-| `neuphonic/neutts-air` | English | ~552M params | Yes |
-| `neuphonic/neutts-air-q4-gguf` | English | Q4 quantized | Yes |
-| `neuphonic/neutts-air-q8-gguf` | English | Q8 quantized | Yes |
-| `neuphonic/neutts-nano` | English | ~229M params | Yes |
-| `neuphonic/neutts-nano-q4-gguf` | English | Q4 quantized | Yes |
-| `neuphonic/neutts-nano-q8-gguf` | English | Q8 quantized | Yes |
-| `neuphonic/neutts-nano-german` | German | ~229M params | Yes |
-| `neuphonic/neutts-nano-french` | French | ~229M params | Yes |
-| `neuphonic/neutts-nano-spanish` | Spanish | ~229M params | Yes |
+For production use, create a systemd service so it starts automatically:
 
-Use `tts_list_models` to see the full list and currently active model.
+```ini
+# /etc/systemd/system/cheema-tts.service
+[Unit]
+Description=Cheema Text-to-Voice MCP Server
+After=network.target
 
----
+[Service]
+Type=simple
+WorkingDirectory=/path/to/CHeema-Text-to-Voice-MCP-Server
+ExecStart=/path/to/venv/bin/python mcp_server.py --transport sse --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
 
-## Built-in Speakers
-
-| Speaker | Language | Description |
-|---------|----------|-------------|
-| `jo` | English (en-us) | Default voice — clear, natural English |
-| `dave` | English (en-us) | Male English voice |
-| `greta` | German (de) | German voice |
-| `juliette` | French (fr-fr) | French voice |
-| `mateo` | Spanish (es) | Spanish voice |
-
----
-
-## Adding Custom Voices
-
-You can clone any voice with just a short audio sample:
-
-1. **Prepare a WAV file** — 3 to 15 seconds of clean, natural speech
-2. **Know the transcript** — the exact text spoken in the WAV file
-3. **Use the `tts_add_speaker` tool**:
-
-```
-Add a new speaker called "myvoice" from /path/to/recording.wav
-with the transcript "This is what I said in the recording"
+[Install]
+WantedBy=multi-user.target
 ```
 
-Custom voices are persisted in the `speakers/` directory and survive server restarts.
+```bash
+sudo systemctl enable --now cheema-tts
+```
 
-### Voice Cloning Tips
+To expose it over HTTPS, put an Nginx or Caddy reverse proxy in front with these key settings for SSE:
+- Disable proxy buffering (`proxy_buffering off`)
+- Set a long read timeout (`proxy_read_timeout 86400`)
+- Add `X-Accel-Buffering: no` header
 
-For best results, reference audio should be:
+---
 
-- **Mono channel** audio
-- **16-44 kHz** sample rate
-- **3-15 seconds** in length
-- **Clean** — minimal background noise
-- **Natural speech** — continuous, conversational tone
+## Troubleshooting
+
+**Server won't start?**
+- Check espeak-ng: `espeak-ng --version`
+- Check dependencies: `pip list | grep -E "mcp|neutts|torch|soundfile"`
+
+**No audio output?**
+- Check the `output/` directory for WAV files
+- Verify speaker name with `tts_list_speakers`
+
+**Slow first run?**
+- Normal — the first run downloads model weights from HuggingFace (~200-500MB). Cached after that.
+
+**Want GPU acceleration?**
+- Set `NEUTTS_BACKBONE_DEVICE=cuda` and `NEUTTS_CODEC_DEVICE=cuda`
+
+---
+
+## How It Works
+
+1. The server loads the NeuTTS backbone model and audio codec on startup
+2. Speaker voice prints (`.pt` files) are loaded into memory
+3. When you request speech, text is phonemized and combined with the speaker's voice reference
+4. The model generates speech tokens, decoded into a 24kHz waveform
+5. Output is saved as a standard WAV file
 
 ---
 
@@ -364,61 +309,20 @@ For best results, reference audio should be:
 
 ```
 CHeema-Text-to-Voice-MCP-Server/
-├── mcp_server.py          # The MCP server (main file)
-├── neutts/                # NeuTTS engine source
-├── samples/               # Built-in speaker samples (.wav, .pt, .txt)
-│   ├── jo.wav / jo.pt / jo.txt
-│   ├── dave.wav / dave.pt / dave.txt
-│   ├── greta.wav / greta.pt / greta.txt
-│   ├── juliette.wav / juliette.pt / juliette.txt
-│   └── mateo.wav / mateo.pt / mateo.txt
-├── speakers/              # Custom speaker data (auto-created)
-│   └── speakers.json      # Custom speaker registry
-├── output/                # Generated WAV files (auto-created)
-├── examples/              # NeuTTS usage examples
-└── README.md
+├── mcp_server.py       # MCP server entry point
+├── neutts/             # NeuTTS engine
+├── samples/            # Built-in speaker voices (.wav, .pt, .txt)
+├── speakers/           # Custom cloned voices (auto-created)
+├── output/             # Generated audio files (auto-created)
+└── examples/           # Usage examples
 ```
-
----
-
-## Troubleshooting
-
-### Server won't start
-
-- Make sure `espeak-ng` is installed: `espeak-ng --version`
-- Verify the venv has all dependencies: `pip list | grep -E "mcp|neutts|torch|soundfile"`
-- Check stderr output for model loading errors
-
-### No audio output
-
-- Check the `output/` directory for generated WAV files
-- Verify the speaker name is valid with `tts_list_speakers`
-
-### Slow first run
-
-The first run downloads model weights from HuggingFace (~200MB-500MB depending on model). Subsequent runs use cached models.
-
-### CUDA/GPU support
-
-Set `NEUTTS_BACKBONE_DEVICE=cuda` and `NEUTTS_CODEC_DEVICE=cuda` for GPU acceleration. Requires PyTorch with CUDA support.
-
----
-
-## How It Works
-
-1. On startup, the server loads the NeuTTS backbone model and codec
-2. Pre-encoded speaker references (`.pt` files) are loaded into memory
-3. When `tts_synthesize` is called, the text is phonemized, combined with the speaker's reference codes, and fed through the model
-4. The model generates speech tokens which are decoded by the codec into a waveform
-5. The waveform is saved as a 24kHz WAV file
-6. All stdout from NeuTTS is redirected to stderr to protect the MCP JSON-RPC transport
 
 ---
 
 ## Credits
 
-- **NeuTTS Engine** by [Neuphonic](https://neuphonic.com/) — the underlying TTS model
-- **MCP Protocol** by [Anthropic](https://anthropic.com/) — the communication standard
+- **[NeuTTS](https://github.com/neuphonic/neutts)** by [Neuphonic](https://neuphonic.com/) — the TTS engine
+- **[MCP Protocol](https://modelcontextprotocol.io)** by [Anthropic](https://anthropic.com/) — the AI tool standard
 
 ---
 
@@ -440,7 +344,7 @@ Building AI-powered tools for educators and researchers.
 
 ## License
 
-This project is licensed under the MIT License. The underlying NeuTTS models have their own licenses — see the [NeuTTS repository](https://github.com/neuphonic/neutts) for details.
+MIT License. The underlying NeuTTS models have their own licenses — see the [NeuTTS repository](https://github.com/neuphonic/neutts) for details.
 
 ---
 
