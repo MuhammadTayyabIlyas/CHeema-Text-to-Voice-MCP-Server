@@ -194,59 +194,112 @@ python mcp_server.py --transport streamable-http --host 0.0.0.0 --port 8000
 
 ---
 
+## Production Deployment (audio.pakedx.com)
+
+The server runs in production on **server2** (`82.223.44.124`) behind Nginx with HTTPS.
+
+### Architecture
+
+```
+MCP Client ──HTTPS──▶ Nginx (audio.pakedx.com:443) ──HTTP──▶ MCP Server (127.0.0.1:8765)
+```
+
+### Endpoints
+
+| Client | URL |
+|--------|-----|
+| n8n (local on server2) | `http://127.0.0.1:8765/sse` |
+| n8n (external) | `https://audio.pakedx.com/sse` |
+| Claude Desktop | `https://audio.pakedx.com/sse` |
+| Any MCP client | `https://audio.pakedx.com/sse` |
+
+### Systemd Service
+
+The server runs as `cheema-tts.service` — auto-starts on boot, auto-restarts on crash.
+
+```bash
+# Status / logs
+systemctl status cheema-tts
+journalctl -u cheema-tts -f
+
+# Restart
+systemctl restart cheema-tts
+```
+
+Service file: `/etc/systemd/system/cheema-tts.service`
+
+### Nginx Config
+
+Config: `/etc/nginx/sites-available/audio.pakedx.com`
+
+Key settings for SSE:
+- `proxy_buffering off` — required for SSE streaming
+- `proxy_cache off` / `X-Accel-Buffering: no` — prevent response caching
+- `proxy_read_timeout 86400` — SSE connections are long-lived (24h)
+- `proxy_set_header Host $proxy_host` — backend rejects non-localhost Host headers
+
+SSL managed by Let's Encrypt (certbot auto-renewal).
+
+### Server Paths
+
+| Path | Description |
+|------|-------------|
+| `/var/www/voice/neutts/` | Project root |
+| `/var/www/voice/venv/` | Python 3.12.3 virtual environment |
+| `/var/www/voice/neutts/output/` | Generated WAV files |
+| `/var/www/voice/neutts/samples/` | Built-in speaker samples |
+| `/var/www/voice/neutts/speakers/` | Custom speaker data |
+
+---
+
 ## n8n Setup
 
-n8n connects to MCP servers over **SSE**. Follow these steps:
+### On the Same Server (server2)
 
-### 1. Start the Server in SSE Mode
+n8n on server2 connects directly — no Nginx/SSL overhead:
 
-```bash
-cd /path/to/CHeema-Text-to-Voice-MCP-Server
-source venv/bin/activate
-python mcp_server.py --transport sse --host 0.0.0.0 --port 8000
-```
+1. Add an **MCP Client Tool** node (or AI Agent with MCP tool)
+2. Set connection type: **SSE**
+3. URL: `http://127.0.0.1:8765/sse`
 
-The server will start on `http://0.0.0.0:8000/sse`.
+### From an External n8n Instance
 
-### 2. Add MCP Node in n8n
+1. Add an **MCP Client Tool** node
+2. Set connection type: **SSE**
+3. URL: `https://audio.pakedx.com/sse`
 
-1. In your n8n workflow, add an **MCP Client** node (or use the AI Agent node with MCP tool)
-2. Set the connection type to **SSE**
-3. Enter the server URL: `http://<your-server-ip>:8000/sse`
-4. Save and test the connection
-
-### 3. Use the Tools
-
-Once connected, n8n can call any of the MCP tools:
+### Available Tools via n8n
 
 - **tts_list_speakers** — discover available voices
-- **tts_synthesize** — generate speech (returns JSON with the WAV file path)
+- **tts_synthesize** — generate speech (returns JSON with WAV file path and duration)
 - **tts_add_speaker** — clone a new voice
 - **tts_help** — get the full usage guide
-
-### 4. Keep the Server Running (Optional)
-
-For production use, run the server with a process manager:
-
-```bash
-# Using nohup
-nohup python mcp_server.py --transport sse --host 0.0.0.0 --port 8000 &
-
-# Using systemd (create a service file) or pm2, supervisor, etc.
-```
 
 ---
 
 ## Other MCP Platforms
 
-Any MCP-compatible platform can connect via SSE or HTTP:
+Any MCP-compatible platform can connect:
 
-1. **Start the server** with `--transport sse` (or `--transport streamable-http`)
-2. **Connect** using your platform's MCP client configuration:
-   - SSE endpoint: `http://<host>:<port>/sse`
-   - HTTP endpoint: `http://<host>:<port>/mcp` (for streamable-http)
-3. **Discover tools** — the server exposes `tts_help`, `tts_synthesize`, `tts_list_speakers`, `tts_list_models`, and `tts_add_speaker`
-4. **Use prompts** — `quick_speech` and `voice_clone_guide` are available as MCP prompt templates
+| Transport | Endpoint |
+|-----------|----------|
+| SSE (production) | `https://audio.pakedx.com/sse` |
+| SSE (local) | `http://127.0.0.1:8765/sse` |
+| stdio (CLI) | `python mcp_server.py` |
+| streamable-http | `python mcp_server.py --transport streamable-http` |
+
+### Claude Desktop Config
+
+```json
+{
+  "mcpServers": {
+    "cheema-tts": {
+      "url": "https://audio.pakedx.com/sse"
+    }
+  }
+}
+```
+
 
 ---
 
