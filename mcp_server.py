@@ -21,6 +21,32 @@ import torch
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
+# Instructions shown to every connecting AI agent
+# ---------------------------------------------------------------------------
+INSTRUCTIONS = """
+Cheema Text-to-Voice MCP Server — AI-powered text-to-speech with voice cloning.
+
+QUICK START:
+1. Call tts_list_speakers to see available voices
+2. Call tts_synthesize with your text to generate speech
+3. Call tts_add_speaker to clone a new voice from a WAV file
+
+AVAILABLE TOOLS:
+- tts_help          → Get detailed usage guide and examples (start here!)
+- tts_list_speakers → List voices (dave, jo, greta, juliette, mateo + custom)
+- tts_list_models   → Show loaded model and alternatives
+- tts_synthesize    → Convert text to speech WAV file
+- tts_add_speaker   → Clone a new voice from audio sample
+
+EXAMPLE:
+  tts_synthesize(text="Hello world!", speaker="jo")
+
+PROMPTS (pre-built templates):
+- quick_speech      → Fast speech generation with just text
+- voice_clone_guide → Step-by-step voice cloning walkthrough
+"""
+
+# ---------------------------------------------------------------------------
 # Configuration via environment variables
 # ---------------------------------------------------------------------------
 NEUTTS_DIR = Path(__file__).resolve().parent
@@ -150,8 +176,50 @@ def _save_custom_registry():
 # ---------------------------------------------------------------------------
 mcp = FastMCP(
     "Cheema Text-to-Voice",
-    instructions="Cheema Text-to-Voice MCP Server — synthesize speech, manage voices, powered by NeuTTS.",
+    instructions=INSTRUCTIONS,
 )
+
+
+@mcp.tool()
+def tts_help() -> str:
+    """Get started with Cheema Text-to-Voice. Returns a complete usage guide
+    with examples for all tools. Call this first if you're new!"""
+    return """
+=== Cheema Text-to-Voice — Quick Start Guide ===
+
+STEP 1: See available voices
+  → Call tts_list_speakers()
+  Returns JSON with voice names, languages, and whether they are built-in or custom.
+
+STEP 2: Generate speech
+  → Call tts_synthesize(text="Your text here", speaker="jo")
+  Parameters:
+    - text (required): The text to speak
+    - speaker (optional, default "jo"): Voice name from tts_list_speakers
+    - output_filename (optional): Custom WAV filename; auto-generated if omitted
+  Returns JSON with output_path, duration_seconds, speaker, and sample_rate.
+
+STEP 3: Clone a new voice
+  → Call tts_add_speaker(name="myvoice", wav_path="/path/to/sample.wav",
+                         ref_text="Exact words in the sample", language="en-us")
+  Requirements:
+    - WAV file: 3-15 seconds of clean speech, mono, 16-44 kHz
+    - ref_text: Exact transcript of what is spoken in the WAV
+  The new voice is saved and available immediately.
+
+OTHER TOOLS:
+  → tts_list_models(): See the currently loaded NeuTTS backbone model and alternatives.
+
+AUDIO TIPS:
+  - Output is always 24 kHz mono WAV
+  - For non-English voices, use the matching speaker (greta=German, juliette=French, mateo=Spanish)
+  - Custom voices persist across server restarts
+
+TROUBLESHOOTING:
+  - "Unknown speaker" → call tts_list_speakers to see valid names
+  - Slow first run → model weights are downloading from HuggingFace (one-time)
+  - No audio file → check the output_path in the JSON response
+"""
 
 
 @mcp.tool()
@@ -275,6 +343,36 @@ def tts_add_speaker(name: str, wav_path: str, ref_text: str, language: str = "en
 
 
 # ---------------------------------------------------------------------------
+# MCP Prompts (pre-built templates for AI agents)
+# ---------------------------------------------------------------------------
+@mcp.prompt()
+def quick_speech(text: str, speaker: str = "jo") -> str:
+    """Generate speech quickly. Provide text and an optional speaker name."""
+    return (
+        f'Please synthesize the following text as speech using the "{speaker}" voice:\n\n'
+        f'"{text}"\n\n'
+        "Use the tts_synthesize tool with the text and speaker above, "
+        "then tell me the output file path and duration."
+    )
+
+
+@mcp.prompt()
+def voice_clone_guide() -> str:
+    """Step-by-step walkthrough for cloning a new voice."""
+    return (
+        "I'd like to clone a new voice. Please walk me through the process:\n\n"
+        "1. First, list the current speakers with tts_list_speakers so I can see what exists.\n"
+        "2. Then ask me for:\n"
+        "   - A name for the new voice\n"
+        "   - The path to a WAV file (3-15 sec, clean mono speech)\n"
+        "   - The exact transcript of what is said in the WAV\n"
+        "   - The language code (e.g. en-us, de, fr-fr, es)\n"
+        "3. Use tts_add_speaker to register the voice.\n"
+        "4. Finally, generate a short test sentence with the new voice using tts_synthesize."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Startup
 # ---------------------------------------------------------------------------
 print("[cheema-tts] Initializing NeuTTS model...", file=sys.stderr)
@@ -283,5 +381,27 @@ _load_builtin_speakers()
 _load_custom_speakers()
 print("[cheema-tts] Server ready.", file=sys.stderr)
 
+# ---------------------------------------------------------------------------
+# Multi-transport support (stdio / sse / streamable-http)
+# ---------------------------------------------------------------------------
+TRANSPORT = os.environ.get("NEUTTS_TRANSPORT", "stdio")
+HOST = os.environ.get("NEUTTS_HOST", "127.0.0.1")
+PORT = int(os.environ.get("NEUTTS_PORT", "8000"))
+
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Cheema Text-to-Voice MCP Server")
+    parser.add_argument(
+        "--transport",
+        default=TRANSPORT,
+        choices=["stdio", "sse", "streamable-http"],
+        help="MCP transport type (default: stdio)",
+    )
+    parser.add_argument("--host", default=HOST, help="Host to bind (SSE/HTTP, default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=PORT, help="Port to bind (SSE/HTTP, default: 8000)")
+    args = parser.parse_args()
+
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
+    mcp.run(transport=args.transport)

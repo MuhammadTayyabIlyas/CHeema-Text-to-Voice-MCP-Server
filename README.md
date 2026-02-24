@@ -1,6 +1,6 @@
 # Cheema Text-to-Voice MCP Server
 
-> An MCP (Model Context Protocol) server that brings **AI-powered text-to-speech** directly into **Claude Desktop** and **Claude Code**. Powered by [NeuTTS](https://github.com/neuphonic/neutts) — state-of-the-art, open-source, on-device TTS with instant voice cloning.
+> An MCP (Model Context Protocol) server that brings **AI-powered text-to-speech** into **Claude Desktop**, **Claude Code**, **n8n**, and any MCP-compatible platform. Powered by [NeuTTS](https://github.com/neuphonic/neutts) — state-of-the-art, open-source, on-device TTS with instant voice cloning. Supports **stdio**, **SSE**, and **HTTP** transports.
 
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge&logo=anthropic)](https://modelcontextprotocol.io)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
@@ -17,13 +17,15 @@ Inspired by [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicev
 
 ### Key Features
 
-- **4 MCP tools** — synthesize speech, list speakers, list models, add custom voices
+- **5 MCP tools** — synthesize speech, list speakers, list models, add custom voices, help guide
+- **2 MCP prompts** — pre-built templates for quick speech and voice cloning
+- **Multi-transport** — stdio (CLI), SSE (n8n/web), and streamable-http
 - **5 built-in voices** — English (dave, jo), German (greta), French (juliette), Spanish (mateo)
 - **Instant voice cloning** — register any voice from a 3-15 second WAV sample
 - **Multilingual** — English, German, French, Spanish (model-dependent)
 - **Runs locally** — no API keys, no cloud, full privacy
+- **AI-friendly onboarding** — rich instructions and a `tts_help` tool guide any AI agent
 - **Thread-safe** — concurrent requests handled safely
-- **Stdout-protected** — NeuTTS output redirected to stderr so JSON-RPC stays clean
 
 ---
 
@@ -31,10 +33,20 @@ Inspired by [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicev
 
 | Tool | Parameters | Description |
 |------|-----------|-------------|
+| `tts_help` | *none* | Get a complete usage guide with examples — call this first! |
 | `tts_synthesize` | `text` (required), `speaker` (default: `"jo"`), `output_filename` (optional) | Convert text to speech, saves WAV to output directory |
 | `tts_list_speakers` | *none* | List all available speaker voices with language and source |
 | `tts_list_models` | *none* | List available NeuTTS backbone models, show currently loaded model |
 | `tts_add_speaker` | `name`, `wav_path`, `ref_text`, `language` (default: `"en-us"`) | Register a new voice from a WAV audio file |
+
+## MCP Prompts (Pre-built Templates)
+
+| Prompt | Parameters | Description |
+|--------|-----------|-------------|
+| `quick_speech` | `text` (required), `speaker` (optional, default: `"jo"`) | Generate speech quickly with a single prompt |
+| `voice_clone_guide` | *none* | Step-by-step walkthrough for cloning a new voice |
+
+These show up automatically in Claude Desktop's prompt picker and in n8n's MCP prompt list.
 
 ---
 
@@ -129,6 +141,9 @@ The server is configured via environment variables. All are optional with sensib
 | `NEUTTS_OUTPUT_DIR` | `./output` | Directory for generated WAV files |
 | `NEUTTS_SAMPLES_DIR` | `./samples` | Directory for built-in speaker samples |
 | `NEUTTS_SPEAKERS_DIR` | `./speakers` | Directory for custom speaker data |
+| `NEUTTS_TRANSPORT` | `stdio` | MCP transport: `stdio`, `sse`, or `streamable-http` |
+| `NEUTTS_HOST` | `127.0.0.1` | Host to bind for SSE/HTTP transports |
+| `NEUTTS_PORT` | `8000` | Port to bind for SSE/HTTP transports |
 
 ### Example with Environment Variables
 
@@ -153,6 +168,87 @@ Or in Claude Desktop config:
   }
 }
 ```
+
+---
+
+## Transport Options
+
+The server supports three transports. Choose based on your platform:
+
+| Transport | Flag | Use Case | Default |
+|-----------|------|----------|---------|
+| `stdio` | `--transport stdio` | Claude Code, Claude Desktop (local pipe) | Yes |
+| `sse` | `--transport sse` | n8n, web dashboards, remote clients | No |
+| `streamable-http` | `--transport streamable-http` | HTTP-based MCP clients | No |
+
+Environment variables: `NEUTTS_TRANSPORT`, `NEUTTS_HOST`, `NEUTTS_PORT`
+
+```bash
+# stdio (default) — used by Claude Code / Claude Desktop
+python mcp_server.py
+
+# SSE — used by n8n and web platforms
+python mcp_server.py --transport sse --host 0.0.0.0 --port 8000
+
+# Streamable HTTP
+python mcp_server.py --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+---
+
+## n8n Setup
+
+n8n connects to MCP servers over **SSE**. Follow these steps:
+
+### 1. Start the Server in SSE Mode
+
+```bash
+cd /path/to/CHeema-Text-to-Voice-MCP-Server
+source venv/bin/activate
+python mcp_server.py --transport sse --host 0.0.0.0 --port 8000
+```
+
+The server will start on `http://0.0.0.0:8000/sse`.
+
+### 2. Add MCP Node in n8n
+
+1. In your n8n workflow, add an **MCP Client** node (or use the AI Agent node with MCP tool)
+2. Set the connection type to **SSE**
+3. Enter the server URL: `http://<your-server-ip>:8000/sse`
+4. Save and test the connection
+
+### 3. Use the Tools
+
+Once connected, n8n can call any of the MCP tools:
+
+- **tts_list_speakers** — discover available voices
+- **tts_synthesize** — generate speech (returns JSON with the WAV file path)
+- **tts_add_speaker** — clone a new voice
+- **tts_help** — get the full usage guide
+
+### 4. Keep the Server Running (Optional)
+
+For production use, run the server with a process manager:
+
+```bash
+# Using nohup
+nohup python mcp_server.py --transport sse --host 0.0.0.0 --port 8000 &
+
+# Using systemd (create a service file) or pm2, supervisor, etc.
+```
+
+---
+
+## Other MCP Platforms
+
+Any MCP-compatible platform can connect via SSE or HTTP:
+
+1. **Start the server** with `--transport sse` (or `--transport streamable-http`)
+2. **Connect** using your platform's MCP client configuration:
+   - SSE endpoint: `http://<host>:<port>/sse`
+   - HTTP endpoint: `http://<host>:<port>/mcp` (for streamable-http)
+3. **Discover tools** — the server exposes `tts_help`, `tts_synthesize`, `tts_list_speakers`, `tts_list_models`, and `tts_add_speaker`
+4. **Use prompts** — `quick_speech` and `voice_clone_guide` are available as MCP prompt templates
 
 ---
 
