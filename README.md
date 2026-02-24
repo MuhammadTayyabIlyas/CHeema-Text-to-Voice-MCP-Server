@@ -1,327 +1,304 @@
-# NeuTTS
+# Cheema Text-to-Voice MCP Server
 
-HuggingFace 🤗:
+> An MCP (Model Context Protocol) server that brings **AI-powered text-to-speech** directly into **Claude Desktop** and **Claude Code**. Powered by [NeuTTS](https://github.com/neuphonic/neutts) — state-of-the-art, open-source, on-device TTS with instant voice cloning.
 
-- NeuTTS-Air (English): [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf), [Space](https://huggingface.co/spaces/neuphonic/neutts-air)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge&logo=anthropic)](https://modelcontextprotocol.io)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![NeuTTS](https://img.shields.io/badge/NeuTTS-Powered-orange?style=for-the-badge)](https://github.com/neuphonic/neutts)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-- NeuTTS-Nano Multilingual Collection:
-   - NeuTTS-Nano (English): [Model](https://huggingface.co/neuphonic/neutts-nano), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
-   - NeuTTS-Nano-French: [Model](https://huggingface.co/neuphonic/neutts-nano-french), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-french-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-french-q4-gguf)
-   - NeuTTS-Nano-German: [Model](https://huggingface.co/neuphonic/neutts-nano-german), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-german-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-german-q4-gguf)
-   - NeuTTS-Nano-Spanish: [Model](https://huggingface.co/neuphonic/neutts-nano-spanish), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-spanish-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-spanish-q4-gguf)
-   - [Multilingual Space](https://huggingface.co/spaces/neuphonic/neutts-nano-multilingual-collection)
+---
 
-[NeuTTS-Nano Demo Video](https://github.com/user-attachments/assets/629ec5b2-4818-4fa6-987a-99fcbadc56bc)
+## What Is This?
 
-_Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI_
+This project wraps the NeuTTS text-to-speech engine as an **MCP server**, so you can generate speech directly from your AI assistant. Just ask Claude to "say something" and it will synthesize a WAV file using any of the built-in voices — or your own cloned voice.
 
-State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS is a collection of open source, on-device, TTS speech language models with instant voice cloning. Built off of LLM backbones, NeuTTS brings natural-sounding speech, real-time performance, built-in security and speaker cloning to your local device - unlocking a new category of embedded voice agents, assistants, toys, and compliance-safe apps.
+Inspired by [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicevox).
 
-## Key Features
+### Key Features
 
-- 🗣Best-in-class realism for their size - produce natural, ultra-realistic voices that sound human, at the sweet spot between speed, size, and quality for real-world applications
-- 📱Optimised for on-device deployment - quantisations provided in GGUF format, ready to run on phones, laptops, or even Raspberry Pis
-- 👫Instant voice cloning - create your own speaker with as little as 3 seconds of audio
-- 🚄Simple LM + codec architecture - making development and deployment simple
+- **4 MCP tools** — synthesize speech, list speakers, list models, add custom voices
+- **5 built-in voices** — English (dave, jo), German (greta), French (juliette), Spanish (mateo)
+- **Instant voice cloning** — register any voice from a 3-15 second WAV sample
+- **Multilingual** — English, German, French, Spanish (model-dependent)
+- **Runs locally** — no API keys, no cloud, full privacy
+- **Thread-safe** — concurrent requests handled safely
+- **Stdout-protected** — NeuTTS output redirected to stderr so JSON-RPC stays clean
 
-> [!CAUTION]
-> Websites like neutts.com are popping up and they're not affliated with Neuphonic, our github or this repo.
->
-> We are on neuphonic.com only. Please be careful out there! 🙏
+---
 
-## Model Details
+## MCP Tools
 
-NeuTTS models are built from small LLM backbones - lightweight yet capable language models optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
+| Tool | Parameters | Description |
+|------|-----------|-------------|
+| `tts_synthesize` | `text` (required), `speaker` (default: `"jo"`), `output_filename` (optional) | Convert text to speech, saves WAV to output directory |
+| `tts_list_speakers` | *none* | List all available speaker voices with language and source |
+| `tts_list_models` | *none* | List available NeuTTS backbone models, show currently loaded model |
+| `tts_add_speaker` | `name`, `wav_path`, `ref_text`, `language` (default: `"en-us"`) | Register a new voice from a WAV audio file |
 
-- **Supported Languages**: English, Spanish, German, French (model-dependent)
-- **Audio Codec**: [NeuCodec](https://huggingface.co/neuphonic/neucodec) - our 50hz neural audio codec that achieves exceptional audio quality at low bitrates using a single codebook
-- **Context Window**: 2048 tokens, enough for processing ~30 seconds of audio (including prompt duration)
-- **Format**: Quantisations available in GGUF format for efficient on-device inference
-- **Responsibility**: Watermarked outputs
-- **Inference Speed**: Real-time generation on mid-range devices
-- **Power Consumption**: Optimised for mobile and embedded devices
+---
 
+## Quick Start
 
-|  | NeuTTS-Air | NeuTTS-Nano Models |
-|---|---:|---:|
-| **# Params (Active)** | ~360m | ~120m |
-| **# Params (Emb + Active)** | ~552m | ~229m |
-| **Cloning** | Yes | Yes |
-| **License** | Apache 2.0 | NeuTTS Open License 1.0 |
+### Prerequisites
 
-## Throughput Benchmarking
-
-These benchmarks are for the Q4_0 quantisations [neutts-air-Q4_0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4_0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf). Note that all models in the NeuTTS-Nano Multilingual Collection have an identical architecture, so these results should apply for any Q4_0 model in the collection.
-
-CPU benchmarking used [llama-bench](https://github.com/ggml-org/llama.cpp/tree/master/tools/llama-bench) (from llama.cpp) to measure prefill and decode throughput at multiple context sizes. For the GPU benchmark (RTX 4090), we leverage vLLM to maximise throughput, using the [vLLM benchmark](https://docs.vllm.ai/en/stable/cli/bench/throughput/).
-
-We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4 16GB, NVIDIA GeForce RTX 4090.
-
-
-|  | NeuTTS-Air | NeuTTS-Nano |
-|---|---:|---:|
-| **Galaxy A25 5G (CPU only)** | 20 tokens/s | 45 tokens/s|
-| **AMD Ryzen 9 HX 370 (CPU only)** | 119 tokens/s | 221 tokens/s |
-| **iMAc M4 16 GB (CPU only)** | 111 tokens/s | 195 tokens/s |
-| **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
-
-
-> [!NOTE]
->  llama-bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB, and 6 threads for each on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
-
-> [!NOTE]
-> Please note that these benchmarks only include the Speech Language Model and do not include the Codec which is needed for a full audio generation pipeline.
-
-## Get Started with NeuTTS
-
-> [!NOTE]
-> We have added a [streaming example](examples/basic_streaming_example.py) using the `llama-cpp-python` library as well as a [finetuning script](examples/finetune.py). For finetuning, please refer to the [finetune guide](TRAINING.md) for more details.
-
-1. **Install System Dependencies (required): `espeak-ng`**
-
-> [!CAUTION]
-> `espeak-ng` is an updated version of `espeak`, as of February 2026 on version 1.52.0. Older versions of `espeak` and `espeak-ng` can exhibit significant phonemisation issues, particularly for non-English languages. Updating your system version of `espeak-ng` to the latest version possible is highly recommended.
-
-> [!NOTE]
-> `brew` on macOS Ventura and later, `apt` in Ubuntu version 25 or Debian version 13, and `choco`/`winget` on Windows, install the latest version of `espeak-ng` with the commands below. If you have a different or older operating system, you may need to install from source: see the following link https://github.com/espeak-ng/espeak-ng/blob/master/docs/building.md
-
-   Please refer to the following link for instructions on how to install `espeak-ng`:
-
-   https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md
-
-   ```bash
-   # Mac OS
-   brew install espeak-ng
-
-   # Ubuntu/Debian
-   sudo apt install espeak-ng
-
-   # Windows install
-   # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
-   choco install espeak-ng
-   # via winget
-   winget install -e --id eSpeak-NG.eSpeak-NG
-   # via msi (need to add to path or folow the "Windows users who installed via msi" below)
-   # find the msi at https://github.com/espeak-ng/espeak-ng/releases
-   ```
-
-   Windows users who installed via msi / do not have their install on path need to run the following (see https://github.com/bootphon/phonemizer/issues/163)
-   ```pwsh
-   $env:PHONEMIZER_ESPEAK_LIBRARY = "c:\Program Files\eSpeak NG\libespeak-ng.dll"
-   $env:PHONEMIZER_ESPEAK_PATH = "c:\Program Files\eSpeak NG"
-   setx PHONEMIZER_ESPEAK_LIBRARY "c:\Program Files\eSpeak NG\libespeak-ng.dll"
-   setx PHONEMIZER_ESPEAK_PATH "c:\Program Files\eSpeak NG"
-   ```
-
-2. **Install NeuTTS**
-   ```bash
-   pip install neutts
-   ```
-
-   Or for a local editable install, clone this repository and run in the base folder:
-   ```bash
-   pip install -e .
-   ```
-
-   Alternatively to install all dependencies, including `onnxruntime` and `llama-cpp-python` (equivalent to steps 3 and 4 below):
-
-   ```bash
-   pip install neutts[all]
-   ```
-
-   or for an editable install:
-
-   ```bash
-   pip install -e .[all]
-   ```
-
-3. **(Optional) Install `llama-cpp-python` to use `.gguf` models.**
-
-   To use any of the GGUF backbones (e.g., in basic_streaming_example.py) you need to install the llama-cpp-python package.
-
-   For the best performance, you must compile this package from source with hardware acceleration enabled for your specific operating system and target device (CPU or GPU).
-
-   #### macOS (Apple Silicon)
-
-   For M-series Macs, it is highly recommended to use Apple's native Accelerate framework for optimized CPU performance:
-
-   ```bash
-      CMAKE_ARGS="-DGGML_METAL=OFF -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Apple" pip install "neutts[llama]" --force-reinstall --no-cache-dir
-      ```
-
-   #### Linux (OpenBLAS)
-   For Linux, you can accelerate CPU performance using OpenBLAS.
-
-   *Prerequisite: Ensure you have OpenBLAS installed on your system (e.g., `sudo apt-get install libopenblas-dev` on Ubuntu). For other distros, refer to the [OpenBLAS Installation Guide](https://github.com/OpenMathLib/OpenBLAS/blob/develop/docs/install.md).*
-
-   ```bash
-      CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install "neutts[llama]" --force-reinstall --no-cache-dir
-   ```
-
-   #### Windows (OpenBLAS)
-
-      *Prerequisite: Ensure you have OpenBLAS installed on your system. Please refer to the [OpenBLAS Installation Guide](https://github.com/OpenMathLib/OpenBLAS/blob/develop/docs/install.md).*
-
-   For Windows users utilizing PowerShell, set the environment variable and run the install command like this:
-   ```pwsh
-      $env:CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS"; pip install "neutts[llama]" --force-reinstall --no-cache-dir
-   ```
-
-   #### Looking for GPU Support?
-   If you have a dedicated GPU (Nvidia/CUDA, AMD/ROCm, M-Series Mac/Metal) and want to utilize it instead of the CPU, the CMAKE flags will be different.Please refer to the official [llama-cpp-python documentation](https://github.com/abetlen/llama-cpp-python/blob/main/README.md) for the exact flags required for your specific hardware.
-
-4. **(Optional) Install `onnxruntime` to use the `.onnx` decoder.**
-   ```bash
-   pip install "neutts[onnx]"
-   ```
-
-## Examples
-
-To get started with the example scripts, clone this repository and navigate into the project directory:
-
-   ```bash
-   git clone https://github.com/neuphonic/neutts.git
-   cd neutts
-   ```
-
-Several examples are available, including a Jupyter notebook in the `examples` folder.
-
-### Basic Example
-Run the basic example script to synthesize speech:
+- **Python 3.10+**
+- **espeak-ng** (system dependency for phonemization)
 
 ```bash
-python -m examples.basic_example \
-  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
-  --ref_audio samples/jo.wav \
-  --ref_text samples/jo.txt
+# Ubuntu/Debian
+sudo apt install espeak-ng
+
+# macOS
+brew install espeak-ng
+
+# Windows
+choco install espeak-ng
 ```
 
-To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air](https://huggingface.co/collections/neuphonic/neutts-air) and [NeuTTS-Nano Multilingual Collection](https://huggingface.co/collections/neuphonic/neutts-nano-multilingual-collection) huggingface collections.
-
-> [!CAUTION]
-> If you are using a non-English backbone, it is highly recommended to use a same-language reference for best performance. See the 'example reference files' section below to select an appropriate example reference.
-
-### One-Code Block Usage
-
-```python
-from neutts import NeuTTS
-import soundfile as sf
-
-tts = NeuTTS(
-   backbone_repo="neuphonic/neutts-nano", # or 'neuphonic/neutts-nano-q4-gguf' with llama-cpp-python installed
-   backbone_device="cpu",
-   codec_repo="neuphonic/neucodec",
-   codec_device="cpu"
-)
-input_text = "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all."
-
-ref_text = "samples/jo.txt"
-ref_audio_path = "samples/jo.wav"
-
-ref_text = open(ref_text, "r").read().strip()
-ref_codes = tts.encode_reference(ref_audio_path)
-
-wav = tts.infer(input_text, ref_codes, ref_text)
-sf.write("test.wav", wav, 24000)
-```
-
-### Streaming
-
-Speech can also be synthesised in _streaming mode_, where audio is generated in chunks and plays as generated. Note that this requires pyaudio to be installed. To do this, run:
+### 1. Clone & Install
 
 ```bash
-python -m examples.basic_streaming_example \
-  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
-  --ref_codes samples/jo.pt \
-  --ref_text samples/jo.txt
+git clone https://github.com/MuhammadTayyabIlyas/CHeema-Text-to-Voice-MCP-Server.git
+cd CHeema-Text-to-Voice-MCP-Server
+
+# Create virtual environment and install dependencies
+python -m venv venv
+source venv/bin/activate        # Linux/macOS
+# venv\Scripts\activate          # Windows
+
+pip install -e .
+pip install "mcp[cli]"
 ```
 
-Again, a particular model repo can be specified with the `--backbone` argument - note that for streaming the model must be in GGUF format.
-
-## Preparing References for Cloning
-
-NeuTTS requires two inputs:
-
-1. A reference audio sample (`.wav` file)
-2. A text string
-
-The model then synthesises the text as speech in the style of the reference audio. This is what enables NeuTTS models' instant voice cloning capability.
-
-### Example Reference Files
-
-You can find some ready-to-use references in the `samples` folder:
-
-- English:
-   - `dave.wav`
-   - `jo.wav`
-- Spanish:
-   - `mateo.wav`
-- German:
-   - `greta.wav`
-- French:
-   - `juliette.wav`
-
-### Guidelines for Best Results
-
-For optimal performance, reference audio samples should be:
-
-1. **Mono channel**
-2. **16-44 kHz sample rate**
-3. **3–15 seconds in length**
-4. **Saved as a `.wav` file**
-5. **Clean** — minimal to no background noise
-6. **Natural, continuous speech** — like a monologue or conversation, with few pauses, so the model can capture tone effectively
-
-## Guidelines for minimizing Latency
-
-For optimal performance on-device:
-
-1. Use the GGUF model backbones
-2. Pre-encode references (see `examples/encode_reference.py` or `examples/basic_example.py`)
-3. Use the [onnx codec decoder](https://huggingface.co/neuphonic/neucodec-onnx-decoder)
-
-Take a look at this example in the [examples README](examples/README.md###minimal-latency-example) to get started.
-
-## Responsibility
-
-Every audio file generated by NeuTTS includes by default  a [Perth (Perceptual Threshold) Watermark](https://github.com/resemble-ai/perth).
-
-Note: If you install neutts using `uv sync` within the repo, the program will still run, but watermarking will be disabled (you will see warning that perth is missing). This is because `uv sync` currently fails to pull the required Perth dependencies, please see [This Issue](https://github.com/resemble-ai/Perth/). To ensure watermarking is active, please install the package via PyPI instead (`pip install neutts`).
-
-## Disclaimer
-
-Don't use this model to do bad things… please.
-
-## Developer Requirements
-
-To run the pre commit hooks to contribute to this project run:
+### 2. Register with Claude Code
 
 ```bash
-pip install pre-commit
+claude mcp add cheema-tts -- /path/to/CHeema-Text-to-Voice-MCP-Server/venv/bin/python /path/to/CHeema-Text-to-Voice-MCP-Server/mcp_server.py
 ```
 
-Then:
+For example, if you cloned into your home directory:
 
 ```bash
-pre-commit install
+claude mcp add cheema-tts -- ~/CHeema-Text-to-Voice-MCP-Server/venv/bin/python ~/CHeema-Text-to-Voice-MCP-Server/mcp_server.py
 ```
 
-## Running Tests
+### 3. Register with Claude Desktop
 
-First, install the dev requirements:
+Add this to your Claude Desktop config file:
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "cheema-tts": {
+      "command": "/path/to/CHeema-Text-to-Voice-MCP-Server/venv/bin/python",
+      "args": ["/path/to/CHeema-Text-to-Voice-MCP-Server/mcp_server.py"],
+      "env": {}
+    }
+  }
+}
+```
+
+### 4. Use It
+
+Once registered, just ask Claude naturally:
+
+> "Convert this text to speech: Hello, welcome to the Cheema Text-to-Voice server!"
+
+> "List available speakers"
+
+> "Say 'Good morning everyone' using the dave voice"
+
+> "Add my voice as a new speaker from /path/to/my_voice.wav"
+
+---
+
+## Configuration
+
+The server is configured via environment variables. All are optional with sensible defaults:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEUTTS_BACKBONE` | `neuphonic/neutts-nano` | HuggingFace backbone model repo |
+| `NEUTTS_BACKBONE_DEVICE` | `cpu` | Device for backbone (`cpu` or `cuda`) |
+| `NEUTTS_CODEC` | `neuphonic/neucodec` | HuggingFace codec model repo |
+| `NEUTTS_CODEC_DEVICE` | `cpu` | Device for codec (`cpu` or `cuda`) |
+| `NEUTTS_OUTPUT_DIR` | `./output` | Directory for generated WAV files |
+| `NEUTTS_SAMPLES_DIR` | `./samples` | Directory for built-in speaker samples |
+| `NEUTTS_SPEAKERS_DIR` | `./speakers` | Directory for custom speaker data |
+
+### Example with Environment Variables
+
+```bash
+NEUTTS_BACKBONE="neuphonic/neutts-air" NEUTTS_BACKBONE_DEVICE="cuda" \
+  claude mcp add cheema-tts -- /path/to/venv/bin/python /path/to/mcp_server.py
+```
+
+Or in Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "cheema-tts": {
+      "command": "/path/to/venv/bin/python",
+      "args": ["/path/to/mcp_server.py"],
+      "env": {
+        "NEUTTS_BACKBONE": "neuphonic/neutts-air",
+        "NEUTTS_BACKBONE_DEVICE": "cuda"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Available Models
+
+| Model | Language | Size | Cloning |
+|-------|----------|------|---------|
+| `neuphonic/neutts-air` | English | ~552M params | Yes |
+| `neuphonic/neutts-air-q4-gguf` | English | Q4 quantized | Yes |
+| `neuphonic/neutts-air-q8-gguf` | English | Q8 quantized | Yes |
+| `neuphonic/neutts-nano` | English | ~229M params | Yes |
+| `neuphonic/neutts-nano-q4-gguf` | English | Q4 quantized | Yes |
+| `neuphonic/neutts-nano-q8-gguf` | English | Q8 quantized | Yes |
+| `neuphonic/neutts-nano-german` | German | ~229M params | Yes |
+| `neuphonic/neutts-nano-french` | French | ~229M params | Yes |
+| `neuphonic/neutts-nano-spanish` | Spanish | ~229M params | Yes |
+
+Use `tts_list_models` to see the full list and currently active model.
+
+---
+
+## Built-in Speakers
+
+| Speaker | Language | Description |
+|---------|----------|-------------|
+| `jo` | English (en-us) | Default voice — clear, natural English |
+| `dave` | English (en-us) | Male English voice |
+| `greta` | German (de) | German voice |
+| `juliette` | French (fr-fr) | French voice |
+| `mateo` | Spanish (es) | Spanish voice |
+
+---
+
+## Adding Custom Voices
+
+You can clone any voice with just a short audio sample:
+
+1. **Prepare a WAV file** — 3 to 15 seconds of clean, natural speech
+2. **Know the transcript** — the exact text spoken in the WAV file
+3. **Use the `tts_add_speaker` tool**:
 
 ```
-pip install -r requirements-dev.txt
+Add a new speaker called "myvoice" from /path/to/recording.wav
+with the transcript "This is what I said in the recording"
 ```
 
-To run the tests:
+Custom voices are persisted in the `speakers/` directory and survive server restarts.
+
+### Voice Cloning Tips
+
+For best results, reference audio should be:
+
+- **Mono channel** audio
+- **16-44 kHz** sample rate
+- **3-15 seconds** in length
+- **Clean** — minimal background noise
+- **Natural speech** — continuous, conversational tone
+
+---
+
+## Project Structure
 
 ```
-pytest tests/
+CHeema-Text-to-Voice-MCP-Server/
+├── mcp_server.py          # The MCP server (main file)
+├── neutts/                # NeuTTS engine source
+├── samples/               # Built-in speaker samples (.wav, .pt, .txt)
+│   ├── jo.wav / jo.pt / jo.txt
+│   ├── dave.wav / dave.pt / dave.txt
+│   ├── greta.wav / greta.pt / greta.txt
+│   ├── juliette.wav / juliette.pt / juliette.txt
+│   └── mateo.wav / mateo.pt / mateo.txt
+├── speakers/              # Custom speaker data (auto-created)
+│   └── speakers.json      # Custom speaker registry
+├── output/                # Generated WAV files (auto-created)
+├── examples/              # NeuTTS usage examples
+└── README.md
 ```
 
-To test loading of all the official backbone and codecs, use:
+---
 
-```
-RUN_SLOW=true pytest tests/
-```
+## Troubleshooting
+
+### Server won't start
+
+- Make sure `espeak-ng` is installed: `espeak-ng --version`
+- Verify the venv has all dependencies: `pip list | grep -E "mcp|neutts|torch|soundfile"`
+- Check stderr output for model loading errors
+
+### No audio output
+
+- Check the `output/` directory for generated WAV files
+- Verify the speaker name is valid with `tts_list_speakers`
+
+### Slow first run
+
+The first run downloads model weights from HuggingFace (~200MB-500MB depending on model). Subsequent runs use cached models.
+
+### CUDA/GPU support
+
+Set `NEUTTS_BACKBONE_DEVICE=cuda` and `NEUTTS_CODEC_DEVICE=cuda` for GPU acceleration. Requires PyTorch with CUDA support.
+
+---
+
+## How It Works
+
+1. On startup, the server loads the NeuTTS backbone model and codec
+2. Pre-encoded speaker references (`.pt` files) are loaded into memory
+3. When `tts_synthesize` is called, the text is phonemized, combined with the speaker's reference codes, and fed through the model
+4. The model generates speech tokens which are decoded by the codec into a waveform
+5. The waveform is saved as a 24kHz WAV file
+6. All stdout from NeuTTS is redirected to stderr to protect the MCP JSON-RPC transport
+
+---
+
+## Credits
+
+- **NeuTTS Engine** by [Neuphonic](https://neuphonic.com/) — the underlying TTS model
+- **MCP Protocol** by [Anthropic](https://anthropic.com/) — the communication standard
+- **Inspiration**: [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicevox)
+
+---
+
+## Author
+
+**Tayyab Ilyas** — PhD Researcher & EdTech Founder
+
+Building AI-powered tools for educators and researchers.
+
+[![Website](https://img.shields.io/badge/Website-tayyabcheema.com-blue?style=flat-square&logo=google-chrome&logoColor=white)](https://tayyabcheema.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-tayyabcheema777-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tayyabcheema777/)
+[![GitHub](https://img.shields.io/badge/GitHub-tayyabcheema-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/tayyabcheema)
+[![Twitter](https://img.shields.io/badge/Twitter-@tayyabcheema777-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://x.com/tayyabcheema777)
+[![YouTube](https://img.shields.io/badge/YouTube-TayyabCheema-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/@TayyabCheema)
+[![Google Scholar](https://img.shields.io/badge/Google_Scholar-Profile-4285F4?style=flat-square&logo=google-scholar&logoColor=white)](https://scholar.google.com/citations?user=z5OLA2sAAAAJ&hl=en)
+[![ORCID](https://img.shields.io/badge/ORCID-0000--0002--5381--1996-A6CE39?style=flat-square&logo=orcid&logoColor=white)](https://orcid.org/0000-0002-5381-1996)
+
+---
+
+## License
+
+This project is licensed under the MIT License. The underlying NeuTTS models have their own licenses — see the [NeuTTS repository](https://github.com/neuphonic/neutts) for details.
+
+---
+
+<p align="center">
+  <strong>Cheema Text-to-Voice MCP Server</strong><br>
+  Give your AI assistant a voice.
+</p>
