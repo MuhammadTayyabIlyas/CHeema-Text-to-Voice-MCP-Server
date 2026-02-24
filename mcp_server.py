@@ -150,7 +150,7 @@ def _save_custom_registry():
 # ---------------------------------------------------------------------------
 mcp = FastMCP(
     "Cheema Text-to-Voice",
-    description="Cheema Text-to-Voice MCP Server — synthesize speech, manage voices, powered by NeuTTS.",
+    instructions="Cheema Text-to-Voice MCP Server — synthesize speech, manage voices, powered by NeuTTS.",
 )
 
 
