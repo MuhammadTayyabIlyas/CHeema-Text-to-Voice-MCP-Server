@@ -11,9 +11,7 @@
 
 ## What Is This?
 
-This project wraps the NeuTTS text-to-speech engine as an **MCP server**, so you can generate speech directly from your AI assistant. Just ask Claude to "say something" and it will synthesize a WAV file using any of the built-in voices — or your own cloned voice.
-
-Inspired by [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicevox).
+This project lets you generate speech directly from your AI assistant. Just ask Claude to "say something" and it will synthesize a WAV file using any of the built-in voices — or your own cloned voice.
 
 ### Key Features
 
@@ -368,7 +366,6 @@ Set `NEUTTS_BACKBONE_DEVICE=cuda` and `NEUTTS_CODEC_DEVICE=cuda` for GPU acceler
 
 - **NeuTTS Engine** by [Neuphonic](https://neuphonic.com/) — the underlying TTS model
 - **MCP Protocol** by [Anthropic](https://anthropic.com/) — the communication standard
-- **Inspiration**: [kajidog/mcp-tts-voicevox](https://github.com/kajidog/mcp-tts-voicevox)
 
 ---
 
