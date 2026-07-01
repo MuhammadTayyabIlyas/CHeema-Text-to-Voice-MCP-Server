@@ -1,17 +1,26 @@
 # Cheema Text-to-Voice MCP Server
 
-> **Free, open-source text-to-speech for AI assistants.** Generate natural speech directly from Claude Desktop, Claude Code, n8n, or any MCP-compatible platform. No API keys. No cloud. Runs entirely on your machine.
-
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue?style=for-the-badge&logo=anthropic)](https://modelcontextprotocol.io)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![NeuTTS](https://img.shields.io/badge/NeuTTS-Powered-orange?style=for-the-badge)](https://github.com/neuphonic/neutts)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
+Cheema Text-to-Voice is a free, open-source MCP server that gives any MCP-compatible AI assistant, including Claude Desktop, Claude Code, and n8n, a real voice. It runs the NeuTTS text-to-speech models locally on your own CPU or GPU, so there are no API keys to configure, no cloud service in the loop, and no per-character billing: text goes in, a WAV file comes out, entirely on your machine. Ask your assistant to speak and it synthesizes natural speech in five built-in voices across four languages, or clones a new voice from a short recording in seconds.
+
+---
+
+## Links
+
+- **MCP directory**: listed on [mcpservers.org](https://mcpservers.org/servers/muhammadtayyabilyas/cheema-text-to-voice-mcp-server)
+- **Case study**: [how Cheema Text-to-Voice was built](https://tayyabcheema.com/projects/cheema-tts-mcp.html)
+
+Built by [Tayyab Ilyas](https://tayyabcheema.com), AI Agent Engineer in Barcelona.
+
 ---
 
 ## What Can It Do?
 
-Just ask your AI assistant to speak — it handles the rest:
+Just ask your AI assistant to speak, and it handles the rest:
 
 > *"Say hello in French using the juliette voice"*
 
@@ -19,7 +28,14 @@ Just ask your AI assistant to speak — it handles the rest:
 
 > *"Clone my voice from this recording and use it to read my essay"*
 
-**5 built-in voices** across 4 languages, plus **instant voice cloning** from a short audio sample.
+**Features:**
+
+- **5 built-in voices across 4 languages**: English (jo, dave), German (greta), French (juliette), Spanish (mateo)
+- **Instant voice cloning** from a 3-15 second WAV sample, persisted across restarts
+- **5 MCP tools** (`tts_help`, `tts_list_speakers`, `tts_list_models`, `tts_synthesize`, `tts_add_speaker`) plus 2 ready-made prompt templates
+- **3 transports**: stdio for Claude Desktop and Claude Code, SSE and Streamable HTTP for n8n and other remote clients
+- **Swappable NeuTTS backbone models**, including smaller quantized GGUF variants, with optional CUDA acceleration
+- **100% local**: no API keys, no cloud calls, no per-character billing
 
 ---
 
@@ -130,7 +146,7 @@ Connect your MCP client to:
 
 | Voice | Language | Description |
 |-------|----------|-------------|
-| **jo** | English | Default — clear, natural female voice |
+| **jo** | English | Default: clear, natural female voice |
 | **dave** | English | Male voice |
 | **greta** | German | German female voice |
 | **juliette** | French | French female voice |
@@ -144,11 +160,11 @@ Use `tts_list_speakers` to see all voices including any custom ones you've added
 
 Clone any voice from a short audio sample:
 
-1. **Record or find a WAV file** — 3 to 15 seconds of clean speech
-2. **Know the transcript** — the exact words spoken in the recording
+1. **Record or find a WAV file**: 3 to 15 seconds of clean speech
+2. **Know the transcript**: the exact words spoken in the recording
 3. **Ask your AI assistant**:
 
-> *"Add a new speaker called 'alex' from /path/to/recording.wav — the transcript is 'This is what I said in the recording'"*
+> *"Add a new speaker called 'alex' from /path/to/recording.wav, with the transcript 'This is what I said in the recording'"*
 
 Or call the tool directly:
 
@@ -169,7 +185,7 @@ Custom voices are saved permanently and available across restarts.
 
 | Tool | What It Does |
 |------|-------------|
-| `tts_help` | Shows a complete usage guide with examples — **start here** |
+| `tts_help` | Shows a complete usage guide with examples (start here) |
 | `tts_synthesize` | Converts text to speech, saves a WAV file |
 | `tts_list_speakers` | Lists all available voices |
 | `tts_list_models` | Shows the active model and alternatives |
@@ -179,7 +195,7 @@ Custom voices are saved permanently and available across restarts.
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `text` | Yes | — | The text to convert to speech |
+| `text` | Yes | none | The text to convert to speech |
 | `speaker` | No | `"jo"` | Which voice to use |
 | `output_filename` | No | auto-generated | Custom filename for the WAV output |
 
@@ -187,7 +203,7 @@ Custom voices are saved permanently and available across restarts.
 
 | Prompt | Description |
 |--------|-------------|
-| `quick_speech` | Fast speech generation — just provide text and optional speaker |
+| `quick_speech` | Fast speech generation: just provide text and optional speaker |
 | `voice_clone_guide` | Step-by-step walkthrough for adding a new voice |
 
 These appear automatically in Claude Desktop's prompt picker.
@@ -200,13 +216,13 @@ The default model (`neutts-nano`) works great on CPU. Larger models produce high
 
 | Model | Language | Size | Notes |
 |-------|----------|------|-------|
-| `neuphonic/neutts-nano` | English | ~229M | **Default** — fast, good quality |
+| `neuphonic/neutts-nano` | English | ~229M | **Default**: fast, good quality |
 | `neuphonic/neutts-air` | English | ~552M | Higher quality, slower |
 | `neuphonic/neutts-nano-german` | German | ~229M | German language |
 | `neuphonic/neutts-nano-french` | French | ~229M | French language |
 | `neuphonic/neutts-nano-spanish` | Spanish | ~229M | Spanish language |
-| `neuphonic/neutts-*-q4-gguf` | varies | smaller | Quantized — faster, less memory |
-| `neuphonic/neutts-*-q8-gguf` | varies | medium | Quantized — balanced |
+| `neuphonic/neutts-*-q4-gguf` | varies | smaller | Quantized: faster, less memory |
+| `neuphonic/neutts-*-q8-gguf` | varies | medium | Quantized: balanced |
 
 Switch models using environment variables:
 
@@ -218,7 +234,7 @@ NEUTTS_BACKBONE="neuphonic/neutts-air" python mcp_server.py
 
 ## Configuration
 
-All settings are optional — defaults work out of the box.
+All settings are optional. Defaults work out of the box.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -288,7 +304,7 @@ To expose it over HTTPS, put an Nginx or Caddy reverse proxy in front with these
 - Verify speaker name with `tts_list_speakers`
 
 **Slow first run?**
-- Normal — the first run downloads model weights from HuggingFace (~200-500MB). Cached after that.
+- Normal: the first run downloads model weights from HuggingFace (~200-500MB). Cached after that.
 
 **Want GPU acceleration?**
 - Set `NEUTTS_BACKBONE_DEVICE=cuda` and `NEUTTS_CODEC_DEVICE=cuda`
@@ -321,14 +337,14 @@ CHeema-Text-to-Voice-MCP-Server/
 
 ## Credits
 
-- **[NeuTTS](https://github.com/neuphonic/neutts)** by [Neuphonic](https://neuphonic.com/) — the TTS engine
-- **[MCP Protocol](https://modelcontextprotocol.io)** by [Anthropic](https://anthropic.com/) — the AI tool standard
+- **[NeuTTS](https://github.com/neuphonic/neutts)** by [Neuphonic](https://neuphonic.com/), the TTS engine
+- **[MCP Protocol](https://modelcontextprotocol.io)** by [Anthropic](https://anthropic.com/), the AI tool standard
 
 ---
 
 ## Author
 
-**Tayyab Ilyas** — PhD Researcher & EdTech Founder
+**Tayyab Ilyas**, PhD Researcher & EdTech Founder
 
 Building AI-powered tools for educators and researchers.
 
@@ -344,7 +360,7 @@ Building AI-powered tools for educators and researchers.
 
 ## License
 
-MIT License. The underlying NeuTTS models have their own licenses — see the [NeuTTS repository](https://github.com/neuphonic/neutts) for details.
+MIT License. The underlying NeuTTS models have their own licenses. See the [NeuTTS repository](https://github.com/neuphonic/neutts) for details.
 
 ---
 
